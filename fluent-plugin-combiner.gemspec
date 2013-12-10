@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.description   = "Combine buffer output data to cut-down net-i/o load"
   spec.homepage      = "https://github.com/karahiyo/fluent-plugin-combiner"
 
-  spec, rubyforge_project = "fluent-plugin-combiner"
+  spec.rubyforge_project = "fluent-plugin-combiner"
 
   spec.files         = `git ls-files`.split($/)
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
