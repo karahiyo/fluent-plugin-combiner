@@ -6,35 +6,62 @@ module Fluent
 
     def initialize
       super
-      # require 'pathname'
+      require 'pathname'
     end
 
     def configure(conf)
       super
-      # @path = conf['path']
+      initialize_hist
+    end
+
+    def initialize_hist
+      @sum = 0
+      @length = 0
+      @hist = {}
     end
 
     def start
       super
-      # init
     end
 
     def shutdown
       super
-      # destroy
     end
 
-    def format(tag, time, record)
-      [tag, time, record].to_msgpack
+    def increment(key)
+      if @hist.key? key
+        @hist[key] += 1
+        @sum += 1
+      else
+        @hist[key] = 1
+        @sum += 1
+        @length += 1
+      end
     end
 
-    def write(chunk)
-      records = []
-      chunk.msgpack_each {|record|
-        # records << record
-      }
-      # write records
+    def clear
+      initialize_hist
     end
 
-  end
+    def flush
+      data = {}
+      data["hist"] = @hist
+      data["sum"] = @sum
+      data["length"] = @length
+      initialize_hist
+      data
+    end
+
+    def emit(tag, es, chain)
+
+      data = {}
+      data["hist"] = @hist
+      es.each do |time, record|
+        increment(record)
+      end
+
+      chain.next
+    end
+
+  end 
 end
