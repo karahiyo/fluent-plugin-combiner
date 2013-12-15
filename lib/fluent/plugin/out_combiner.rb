@@ -20,8 +20,11 @@ module Fluent
     def configure(conf)
       super
 
-      if @count_interval
-        @tick = @count_interval.to_i
+      @tick = @count_interval.to_i if @count_interval
+      @tag_prefix_string = @tag_prefix ? @tag_prefix + '.' : @tag + '.'
+      if @input_tag_remove_prefix
+        @remove_prefix_string = @input_tag_remove_prefix + '.' 
+        @remove_prefix_length = @remove_prefix_string.length
       end
 
       @hist = initialize_hist
@@ -86,9 +89,21 @@ module Fluent
     def generate_output(data)
       output = {}
       data.each do |tag, hist|
-        output[@tag + '.' + tag] = hist
+        output[add_prefix(stripped_tag(tag))] = hist
       end
       output
+    end
+
+    def add_prefix(tag="")
+      return @tag_prefix if tag.empty?
+      return @tag_prefix_string + tag
+    end
+
+    def stripped_tag(tag)
+      return tag unless @input_tag_remove_prefix
+      return tag[@remove_prefix_length..-1] if tag.start_with?(@remove_prefix_string) && tag.length > @remove_prefix_length
+      return "" if tag == @input_tag_remove_prefix
+      return tag
     end
 
     def emit(tag, es, chain)

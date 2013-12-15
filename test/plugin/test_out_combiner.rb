@@ -8,6 +8,8 @@ class CombinerOutputTest < Test::Unit::TestCase
   CONFIG = %[
     count_key keys
     count_interval 5s
+    tag_prefix combined
+    input_tag_remove_prefix test.input
   ]
 
   def create_driver(conf = CONFIG, tag='test')
@@ -19,19 +21,21 @@ class CombinerOutputTest < Test::Unit::TestCase
     assert_equal 5, d.instance.tick
     assert_equal 'combined', d.instance.tag
     assert_equal 'keys', d.instance.count_key
+    assert_equal 'combined', d.instance.tag_prefix
+    assert_equal 'test.input', d.instance.input_tag_remove_prefix
   end
 
   def test_increment
-    f = create_driver('')
+    f = create_driver
     f.instance.increment("test.input", 'a')
     expected = f.instance.flush
-    assert_equal({"combined.test.input" => {:hist => {"a" => 1}, :sum => 1, :len => 1}}, expected)
+    assert_equal({"combined" => {:hist => {"a" => 1}, :sum => 1, :len => 1}}, expected)
     expected = f.instance.flush
-    assert_equal({"combined.test.input" => {:hist => {}, :sum => 0, :len => 0}}, expected)
+    assert_equal({"combined" => {:hist => {}, :sum => 0, :len => 0}}, expected)
   end
 
   def test_emit
-    f = create_driver('')
+    f = create_driver
     f.run do
       60.times do
         f.emit({"keys" => ["A", "B", "C"]})
@@ -43,10 +47,10 @@ class CombinerOutputTest < Test::Unit::TestCase
   end
 
   def test_clear
-    f = create_driver('')
+    f = create_driver
     assert_equal({}, f.instance.hist)
     f.instance.increment("test.input", 'A')
     f.instance.clear
-    assert_equal({"combined.test.input" => {:hist => {}, :sum => 0, :len => 0}}, f.instance.flush)
+    assert_equal({"combined" => {:hist => {}, :sum => 0, :len => 0}}, f.instance.flush)
   end
 end
