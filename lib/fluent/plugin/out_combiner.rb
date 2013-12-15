@@ -6,8 +6,9 @@ module Fluent
     config_param :tag, :string, :default => 'combined'
     config_param :tag_prefix, :string, :default => nil
     config_param :input_tag_remove_prefix, :string, :default => nil
+    config_param :count_interval, :time, :default => 60
 
-    attr_accessor :hist
+    attr_accessor :hist, :last_checked, :tick
 
     def initialize
       super
@@ -29,13 +30,16 @@ module Fluent
       hist
     end
 
-    #def start
-    #  super
-    #end
+    def start
+      super
+      start_watch
+    end
 
-    #def shutdown
-    #  super
-    #end
+    def shutdown
+      super
+      @watcher.terminate
+      @watcher.join
+    end
 
     def increment(tag, key)
       @hist[tag] ||= {:hist => {}, :sum => 0, :len => 0}
@@ -87,6 +91,23 @@ module Fluent
       end
 
       chain.next
+    end
+
+    private
+    def start_watch
+      @watcher = Thread.new(&method(:watch))
+    end
+
+    def watch
+      @last_checked ||= Fluent::Engine.now
+      while true
+        sleep 0.5
+        if Fluent::Engine.now - @last_checked >= @tick
+          now = Fluent::Engine.now
+          flush_emit
+          @last_checked = now
+        end
+      end
     end
 
   end 
