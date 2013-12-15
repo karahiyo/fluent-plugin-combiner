@@ -19,14 +19,14 @@ module Fluent
       @hist = initialize_hist
     end
 
-    def initialize_hist
-      if @hist
-        @hist.each do |tag, hist|
-          @hist[tag] = {"hist" => {}, "sum" => 0, "length" => 0}
+    def initialize_hist(tags=nil)
+      hist = {}
+      if tags
+        tags.each do |tag|
+          hist[tag] = {:hist => {}, :sum => 0, :len => 0}
         end
-      else
-        {}
       end
+      hist
     end
 
     #def start
@@ -38,14 +38,14 @@ module Fluent
     #end
 
     def increment(tag, key)
-      @hist[tag] ||= {"hist" => {}, "sum" => 0, "length" => 0}
-      if @hist[tag]["hist"].key? key
-        @hist[tag]["hist"][key] += 1
-        @hist[tag]["sum"] += 1
+      @hist[tag] ||= {:hist => {}, :sum => 0, :len => 0}
+      if @hist[tag][:hist].key? key
+        @hist[tag][:hist][key] += 1
+        @hist[tag][:sum] += 1
       else
-        @hist[tag]["hist"][key] = 1
-        @hist[tag]["sum"] += 1
-        @hist[tag]["length"] += 1
+        @hist[tag][:hist][key] = 1
+        @hist[tag][:sum] += 1
+        @hist[tag][:len] += 1
       end
       @hist
     end
@@ -59,13 +59,24 @@ module Fluent
     end
 
     def clear
-      initialize_hist
+      @hist = initialize_hist(@hist.keys.dup)
     end
 
     def flush
-      data = @hist.dup
-      initialize_hist
-      data
+      flushed, @hist = @hist, initialize_hist(@hist.keys.dup)
+      generate_output(flushed)
+    end
+
+    def flush_emit
+      Fluent::Engine.emit(@tag,  Fluent::Engine.now,  flush)
+    end
+
+    def generate_output(data)
+      output = {}
+      data.each do |tag, hist|
+        output[@tag + '.' + tag] = hist
+      end
+      output
     end
 
     def emit(tag, es, chain)

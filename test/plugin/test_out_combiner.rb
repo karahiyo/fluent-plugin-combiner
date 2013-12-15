@@ -20,9 +20,9 @@ class CombinerOutputTest < Test::Unit::TestCase
     f = create_driver('')
     f.instance.increment("test.input", 'a')
     expected = f.instance.flush
-    assert_equal({"test.input" => {"hist" => {"a" => 1}, "sum" => 1, "length" => 1}}, expected)
+    assert_equal({"combined.test.input" => {:hist => {"a" => 1}, :sum => 1, :len => 1}}, expected)
     expected = f.instance.flush
-    assert_equal({"test.input" => {"hist" => {}, "sum" => 0, "length" => 0}}, expected)
+    assert_equal({"combined.test.input" => {:hist => {}, :sum => 0, :len => 0}}, expected)
   end
 
   def test_emit
@@ -33,8 +33,8 @@ class CombinerOutputTest < Test::Unit::TestCase
       end
     end
     out = f.instance.flush
-    assert_equal({"test" => {"hist" => {"A" => 60, "B" => 60, "C" => 60}, 
-                  "sum" => 180, "length" => 3}}, out)
+    assert_equal({"combined.test" => {:hist => {"A" => 60, "B" => 60, "C" => 60}, 
+                  :sum => 180, :len => 3}}, out)
   end
 
   def test_clear
@@ -42,6 +42,6 @@ class CombinerOutputTest < Test::Unit::TestCase
     assert_equal({}, f.instance.hist)
     f.instance.increment("test.input", 'A')
     f.instance.clear
-    assert_equal({"test.input" => {"hist"=>{}, "sum" => 0, "length" => 0}}, f.instance.flush)
+    assert_equal({"combined.test.input" => {:hist => {}, :sum => 0, :len => 0}}, f.instance.flush)
   end
 end
