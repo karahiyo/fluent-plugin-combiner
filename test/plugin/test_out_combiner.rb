@@ -6,6 +6,8 @@ class CombinerOutputTest < Test::Unit::TestCase
   end
 
   CONFIG = %[
+    count_key keys
+    count_interval 5s
   ]
 
   def create_driver(conf = CONFIG, tag='test')
@@ -13,7 +15,10 @@ class CombinerOutputTest < Test::Unit::TestCase
   end
 
   def test_configure
-    f = create_driver('')
+    d = create_driver
+    assert_equal 5, d.instance.tick
+    assert_equal 'combined', d.instance.tag
+    assert_equal 'keys', d.instance.count_key
   end
 
   def test_increment

@@ -7,8 +7,10 @@ module Fluent
     config_param :tag_prefix, :string, :default => nil
     config_param :input_tag_remove_prefix, :string, :default => nil
     config_param :count_interval, :time, :default => 60
+    config_param :count_key, :string, :default => 'keys'
 
-    attr_accessor :hist, :last_checked, :tick
+    attr_accessor :hist
+    attr_accessor :tick, :last_checked
 
     def initialize
       super
@@ -17,6 +19,11 @@ module Fluent
 
     def configure(conf)
       super
+
+      if @count_interval
+        @tick = @count_interval.to_i
+      end
+
       @hist = initialize_hist
     end
 
@@ -72,7 +79,8 @@ module Fluent
     end
 
     def flush_emit
-      Fluent::Engine.emit(@tag,  Fluent::Engine.now,  flush)
+      flushed = flush
+      Fluent::Engine.emit(@tag,  Fluent::Engine.now,  flushed)
     end
 
     def generate_output(data)
@@ -86,7 +94,7 @@ module Fluent
     def emit(tag, es, chain)
 
       es.each do |time, record|
-        keys = record["keys"]
+        keys = record[@count_key]
         countup(tag, keys)
       end
 
@@ -99,7 +107,7 @@ module Fluent
     end
 
     def watch
-      @last_checked ||= Fluent::Engine.now
+      @last_checked = Fluent::Engine.now
       while true
         sleep 0.5
         if Fluent::Engine.now - @last_checked >= @tick
