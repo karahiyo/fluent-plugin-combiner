@@ -30,16 +30,7 @@ module Fluent
       @hist = initialize_hist
     end
 
-    def initialize_hist(tags=nil)
-      hist = {}
-      if tags
-        tags.each do |tag|
-          hist[tag] = {:hist => {}, :sum => 0, :len => 0}
-        end
-      end
-      hist
-    end
-
+    ## Fluent::Output main methods
     def start
       super
       start_watch
@@ -50,6 +41,47 @@ module Fluent
       @watcher.terminate
       @watcher.join
     end
+
+    def flush
+      flushed, @hist = @hist, initialize_hist(@hist.keys.dup)
+      generate_output(flushed)
+    end
+
+    def flush_emit
+      flushed = flush
+      Fluent::Engine.emit(@tag,  Fluent::Engine.now,  flushed)
+    end
+
+    def generate_output(data)
+      output = {}
+      data.each do |tag, hist|
+        output[add_prefix(stripped_tag(tag))] = hist
+      end
+      output
+    end
+
+    def emit(tag, es, chain)
+
+      es.each do |time, record|
+        keys = record[@count_key]
+        countup(tag, keys)
+      end
+
+      chain.next
+    end
+
+
+    ## Combiner's main methods
+    def initialize_hist(tags=nil)
+      hist = {}
+      if tags
+        tags.each do |tag|
+          hist[tag] = {:hist => {}, :sum => 0, :len => 0}
+        end
+      end
+      hist
+    end
+
 
     def increment(tag, key)
       @hist[tag] ||= {:hist => {}, :sum => 0, :len => 0}
@@ -76,24 +108,7 @@ module Fluent
       @hist = initialize_hist(@hist.keys.dup)
     end
 
-    def flush
-      flushed, @hist = @hist, initialize_hist(@hist.keys.dup)
-      generate_output(flushed)
-    end
-
-    def flush_emit
-      flushed = flush
-      Fluent::Engine.emit(@tag,  Fluent::Engine.now,  flushed)
-    end
-
-    def generate_output(data)
-      output = {}
-      data.each do |tag, hist|
-        output[add_prefix(stripped_tag(tag))] = hist
-      end
-      output
-    end
-
+    ## Utils
     def add_prefix(tag="")
       return @tag_prefix if tag.empty?
       return @tag_prefix_string + tag
@@ -106,17 +121,9 @@ module Fluent
       return tag
     end
 
-    def emit(tag, es, chain)
-
-      es.each do |time, record|
-        keys = record[@count_key]
-        countup(tag, keys)
-      end
-
-      chain.next
-    end
-
     private
+
+    ## watcher
     def start_watch
       @watcher = Thread.new(&method(:watch))
     end
