@@ -19,7 +19,7 @@ class CombinerOutputTest < Test::Unit::TestCase
   def test_configure
     d = create_driver
     assert_equal 5, d.instance.tick
-    assert_equal 'combined', d.instance.tag
+    assert_equal nil, d.instance.tag
     assert_equal 'keys', d.instance.count_key
     assert_equal 'combined', d.instance.tag_prefix
     assert_equal 'test.input', d.instance.input_tag_remove_prefix

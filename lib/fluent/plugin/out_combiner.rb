@@ -3,8 +3,8 @@ module Fluent
     Fluent::Plugin.register_output('combiner', self)
 
     # config_param :hoge, :string, :default => 'hoge'
-    config_param :tag, :string, :default => 'combined'
-    config_param :tag_prefix, :string, :default => nil
+    config_param :tag, :string, :default => nil
+    config_param :tag_prefix, :string, :default => 'combined'
     config_param :input_tag_remove_prefix, :string, :default => nil
     config_param :count_interval, :time, :default => 60
     config_param :count_key, :string, :default => 'keys'
@@ -21,7 +21,8 @@ module Fluent
       super
 
       @tick = @count_interval.to_i if @count_interval
-      @tag_prefix_string = @tag_prefix ? @tag_prefix + '.' : @tag + '.'
+      @tag_str = @tag + '.' if @tag
+      @tag_prefix_string = @tag_prefix + '.' if @tag_prefix
       if @input_tag_remove_prefix
         @remove_prefix_string = @input_tag_remove_prefix + '.' 
         @remove_prefix_length = @remove_prefix_string.length
@@ -49,13 +50,20 @@ module Fluent
 
     def flush_emit
       flushed = flush
-      Fluent::Engine.emit(@tag,  Fluent::Engine.now,  flushed)
+      now = Fluent::Engine.now
+      flushed.each do |tag, message|
+        Fluent::Engine.emit(tag, now, message)
+      end
     end
 
     def generate_output(data)
       output = {}
       data.each do |tag, hist|
-        output[add_prefix(stripped_tag(tag))] = hist
+        if @tag
+          output[@tag] = hist
+        else
+          output[add_prefix(stripped_tag(tag))] = hist
+        end
       end
       output
     end
