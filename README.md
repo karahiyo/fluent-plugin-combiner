@@ -1,6 +1,4 @@
-# Fluent::Plugin::Combiner
-
-TODO: Write a gem description
+# fluent-plugin-combiner
 
 ## Installation
 
