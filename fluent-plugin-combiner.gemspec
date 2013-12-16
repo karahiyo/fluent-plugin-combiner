@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
   spec.name          = "fluent-plugin-combiner"
-  spec.version       = "0.0.1"
+  spec.version       = "0.0.2"
   spec.authors       = ["karahiyo"]
   spec.email         = ["a.ryuklnm@gmail.com"]
   spec.summary       = "Combine buffer output data to cut-down net-i/o load"
