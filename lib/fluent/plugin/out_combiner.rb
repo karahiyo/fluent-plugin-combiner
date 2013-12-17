@@ -8,9 +8,10 @@ module Fluent
     config_param :input_tag_remove_prefix, :string, :default => nil
     config_param :count_interval, :time, :default => 60
     config_param :count_key, :string, :default => 'keys'
+    config_param :bin_num, :integer, :default => 100
 
-    attr_accessor :hist
-    attr_accessor :tick, :last_checked
+    attr_accessor :counts
+    attr_accessor :tick, :bin_num
 
     def initialize
       super
@@ -28,7 +29,7 @@ module Fluent
         @remove_prefix_length = @remove_prefix_string.length
       end
 
-      @hist = initialize_hist
+      @counts = initialize_counts
     end
 
     ## Fluent::Output main methods
@@ -44,7 +45,7 @@ module Fluent
     end
 
     def flush
-      flushed, @hist = @hist, initialize_hist(@hist.keys.dup)
+      flushed, @counts = @counts, initialize_counts(@counts.keys.dup)
       generate_output(flushed)
     end
 
@@ -80,28 +81,28 @@ module Fluent
 
 
     ## Combiner's main methods
-    def initialize_hist(tags=nil)
-      hist = {}
+    def initialize_counts(tags=nil)
+      counts = {}
       if tags
         tags.each do |tag|
-          hist[tag] = {:hist => {}, :sum => 0, :len => 0}
+          counts[tag] = {:hist => {}, :sum => 0, :len => 0}
         end
       end
-      hist
+      counts
     end
 
 
     def increment(tag, key)
-      @hist[tag] ||= {:hist => {}, :sum => 0, :len => 0}
-      if @hist[tag][:hist].key? key
-        @hist[tag][:hist][key] += 1
-        @hist[tag][:sum] += 1
+      @counts[tag] ||= {:hist => {}, :sum => 0, :len => 0}
+      if @counts[tag][:hist].key? key
+        @counts[tag][:hist][key] += 1
+        @counts[tag][:sum] += 1
       else
-        @hist[tag][:hist][key] = 1
-        @hist[tag][:sum] += 1
-        @hist[tag][:len] += 1
+        @counts[tag][:hist][key] = 1
+        @counts[tag][:sum] += 1
+        @counts[tag][:len] += 1
       end
-      @hist
+      @counts
     end
 
     def countup(tag, keys)
