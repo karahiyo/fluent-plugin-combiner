@@ -46,11 +46,11 @@ class CombinerOutputTest < Test::Unit::TestCase
                   :sum => 180, :len => 3}}, out)
   end
 
-  def test_clear
+  def test_flush_clear
     f = create_driver
-    assert_equal({}, f.instance.hist)
+    assert_equal({}, f.instance.counts)
     f.instance.increment("test.input", 'A')
-    f.instance.clear
+    f.instance.flush # flush and clear counts data
     assert_equal({"combined" => {:hist => {}, :sum => 0, :len => 0}}, f.instance.flush)
   end
 end
