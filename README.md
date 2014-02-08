@@ -1,4 +1,4 @@
-# fluent-plugin-combiner
+# fluent-plugin-combiner, a plugin for [Fluentd](http://fluentd.org)
 
 Fluentd plugin to count message keys, and make histogram.
 
